@@ -1,23 +1,19 @@
-from gym import wrappers
 import gym
 import numpy as np
-import keras
-from keras.models import Sequential, Model
-from keras.layers import Dense, Dropout, Input
-from keras.layers.merge import Add, Multiply
-from keras.optimizers import Adam
 import keras.backend as K
-from keras.layers.normalization import BatchNormalization
-from keras.callbacks import TensorBoard, ModelCheckpoint
-import matplotlib.pyplot as plt
 import tensorflow as tf
-from datetime import datetime
-import random
-from collections import deque
-
+import logging
 from src.models.actorcritic import ActorCritic
 
 
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+
+formatter = logging.Formatter('[%(asctime)-8s] [%(name)-8s] [%(levelname)-1s] [%(message)s]')
+
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 
 

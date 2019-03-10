@@ -1,6 +1,4 @@
-from gym import wrappers
-import gym
-import numpy as np
+import logging
 import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Input
@@ -11,9 +9,14 @@ from keras.layers.normalization import BatchNormalization
 from keras.callbacks import TensorBoard, ModelCheckpoint
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from datetime import datetime
-import random
 
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('[%(asctime)-8s] [%(name)-8s] [%(levelname)-1s] [%(message)s]')
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 
 
@@ -26,6 +29,16 @@ class ActorNetwork(object):
     """
 
     def __init__(self, sess, state_dim, action_dim, action_bound, learning_rate, tau, batch_size):
+        """
+        Create the actor ...
+        :param sess:
+        :param state_dim:
+        :param action_dim:
+        :param action_bound:
+        :param learning_rate:
+        :param tau:
+        :param batch_size:
+        """
         self.sess = sess
         self.s_dim = state_dim
         self.a_dim = action_dim
@@ -62,7 +75,13 @@ class ActorNetwork(object):
         self.num_trainable_vars = len(
             self.network_params) + len(self.target_network_params)
 
+        logger.info("Actor created!")
+
     def create_actor_network(self):
+        """
+        Create the actor network topology
+        :return:
+        """
         ### Get start var count ###
         istart = len(tf.trainable_variables())
         ### Input tensors ###
@@ -100,22 +119,42 @@ class ActorNetwork(object):
 
     ### Train ###
     def train(self, inputs, a_gradient):
+        """
+        Train the actor network
+        :param inputs: state
+        :param a_gradient: dQ/dQ from the critic
+        :return:
+        """
         self.sess.run(self.optimize, feed_dict={
             self.inputs: inputs,
             self.action_gradient: a_gradient
         })
 
     def predict(self, inputs):
+        """
+        Predict actions based on state input
+        :param inputs:
+        :return:
+        """
         return self.sess.run(self.scaled_out, feed_dict={
             self.inputs: inputs
         })
 
     def predict_target(self, inputs):
+        """
+        Predict actions based on state input (target network)
+        :param inputs:
+        :return:
+        """
         return self.sess.run(self.target_scaled_out, feed_dict={
             self.target_inputs: inputs
         })
 
     def update_target_network(self):
+        """
+        Update target network
+        :return:
+        """
         self.sess.run(self.update_target_network_params)
 
     def get_num_trainable_vars(self):

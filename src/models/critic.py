@@ -1,21 +1,20 @@
-from gym import wrappers
-import gym
-import numpy as np
 import keras
 from keras.models import Sequential, Model
 from keras.layers import Dense, Dropout, Input
 from keras.layers.merge import Add, Multiply
 from keras.optimizers import Adam
-import keras.backend as K
 from keras.layers.normalization import BatchNormalization
 from keras.callbacks import TensorBoard, ModelCheckpoint
 import matplotlib.pyplot as plt
 import tensorflow as tf
-from datetime import datetime
-import random
-from collections import deque
+import logging
 
-
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
+formatter = logging.Formatter('[%(asctime)-8s] [%(name)-8s] [%(levelname)-1s] [%(message)s]')
+stream_handler = logging.StreamHandler()
+stream_handler.setFormatter(formatter)
+logger.addHandler(stream_handler)
 
 class CriticNetwork(object):
     """
@@ -23,7 +22,17 @@ class CriticNetwork(object):
     The action must be obtained from the output of the Actor network.
     """
 
-    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma, num_actor_vars):
+    def __init__(self, sess, state_dim, action_dim, learning_rate, tau, gamma):
+        """
+
+        :param sess:
+        :param state_dim:
+        :param action_dim:
+        :param learning_rate:
+        :param tau:
+        :param gamma:
+        :param num_actor_vars:
+        """
         self.sess = sess
         self.s_dim = state_dim
         self.a_dim = action_dim
@@ -61,7 +70,13 @@ class CriticNetwork(object):
         # actions except for one.
         self.action_grads = tf.gradients(self.out, self.action)
 
+        logger.info("Critic created!")
+
     def create_critic_network(self):
+        """
+        Create the critic network topology
+        :return:
+        """
         ### Get start var count ###
         istart = len(tf.trainable_variables())
         ### Input tensors ###
@@ -91,6 +106,13 @@ class CriticNetwork(object):
         return inputs, actions, out, weights
 
     def train(self, inputs, action, predicted_q_value):
+        """
+        Train the critic network
+        :param inputs: states
+        :param action: actions from actor
+        :param predicted_q_value: r + gamma*Qtarget
+        :return:
+        """
         return self.sess.run([self.out, self.optimize], feed_dict={
             self.inputs: inputs,
             self.action: action,
@@ -98,22 +120,44 @@ class CriticNetwork(object):
         })
 
     def predict(self, inputs, action):
+        """
+        Predict Qvalues based on state and actions
+        :param inputs:
+        :param action:
+        :return:
+        """
         return self.sess.run(self.out, feed_dict={
             self.inputs: inputs,
             self.action: action
         })
 
     def predict_target(self, inputs, action):
+        """
+        Predict Qvalues based on state and actions (target network)
+        :param inputs:
+        :param action:
+        :return:
+        """
         return self.sess.run(self.target_out, feed_dict={
             self.target_inputs: inputs,
             self.target_action: action
         })
 
     def action_gradients(self, inputs, actions):
+        """
+        Calculate gradients of critic wrt to actions (needed for actor training)
+        :param inputs:
+        :param actions:
+        :return:
+        """
         return self.sess.run(self.action_grads, feed_dict={
             self.inputs: inputs,
             self.action: actions
         })
 
     def update_target_network(self):
+        """
+        Update the target network
+        :return:
+        """
         self.sess.run(self.update_target_network_params)
